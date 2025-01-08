@@ -1,0 +1,69 @@
+import streamlit as st
+import pandas as pd
+
+# Function to load data
+def load_data(file):
+    return pd.read_csv(file)
+
+# Streamlit App
+st.title("Data Cleaning Assistant")
+
+# Upload CSV File
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+
+if uploaded_file is not None:
+    # Load data
+    data = load_data(uploaded_file)
+    st.write("Original Dataset", data.head())
+    
+    # Handle Missing Values
+    st.subheader("Handle Missing Values")
+    missing_option = st.selectbox(
+        "Choose how to handle missing values:",
+        ["Do nothing", "Drop rows with missing values", "Fill with mean", "Fill with median"]
+    )
+    if missing_option == "Drop rows with missing values":
+        data = data.dropna()
+    elif missing_option == "Fill with mean":
+        data = data.fillna(data.mean())
+    elif missing_option == "Fill with median":
+        data = data.fillna(data.median())
+    
+    st.write("Updated Dataset after handling missing values:", data.head())
+    
+    # Drop Duplicate Rows
+    st.subheader("Remove Duplicate Rows")
+    if st.button("Remove Duplicates"):
+        data = data.drop_duplicates()
+        st.success("Duplicate rows removed.")
+        st.write("Dataset after removing duplicates:", data.head())
+    
+    # Change Column Data Types
+    st.subheader("Change Column Data Types")
+    column_to_change = st.selectbox("Select a column to change type:", data.columns)
+    new_dtype = st.selectbox("Select new data type:", ["int", "float", "string"])
+    if st.button("Change Data Type"):
+        try:
+            if new_dtype == "int":
+                data[column_to_change] = data[column_to_change].astype(int)
+            elif new_dtype == "float":
+                data[column_to_change] = data[column_to_change].astype(float)
+            elif new_dtype == "string":
+                data[column_to_change] = data[column_to_change].astype(str)
+            st.success(f"Column '{column_to_change}' converted to {new_dtype}.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+    
+    st.write("Updated Dataset after changing data types:", data.head())
+    
+    # Download Cleaned Dataset
+    st.subheader("Download Cleaned Dataset")
+    cleaned_file = "cleaned_data.csv"
+    data.to_csv(cleaned_file, index=False)
+    with open(cleaned_file, "rb") as file:
+        st.download_button(
+            label="Download Cleaned Dataset",
+            data=file,
+            file_name="cleaned_data.csv",
+            mime="text/csv"
+        )
